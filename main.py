@@ -173,9 +173,13 @@ date_range = st.sidebar.date_input(
 )
 
 # Affiche le contenu de la page sélectionnée
-if page == "Étape A : KPI":
-    if date_range:
-        show_kpi(prix, infos_stations, date_range)
-elif page == "Étape B : Cartes":
-    if date_range:
-        show_cartes(prix, infos_stations, date_range)
+if len(date_range) == 2:
+    if date_range[0] and date_range[1] and date_range[0] < date_range[1]:
+        if page == "Étape A : KPI":
+            show_kpi(prix, infos_stations, date_range)
+        elif page == "Étape B : Cartes":
+            show_cartes(prix, infos_stations, date_range)
+    else:
+        st.warning("Veuillez sélectionner une plage de dates valide.")
+else:
+    st.warning("Veuillez sélectionner une plage de dates valide.")

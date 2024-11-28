@@ -24,6 +24,17 @@ def show_cartes(prix, infos_stations, date_range):
         "Sélectionnez une station Carrefour", carrefour_ids
     )
 
+    # Stats
+    # Nom de la station + emplacement
+    selected_carrefour = carrefour_stations[
+        carrefour_stations["id"] == selected_carrefour_id
+    ].iloc[0]
+    st.write(f"Station Carrefour sélectionnée: {selected_carrefour['Ville']}")
+
+    # Nombre de stations concurrentes
+    nb_concurrents = len(carrefour_concurrents[str(selected_carrefour_id)])
+    st.write(f"Nombre de stations concurrentes: {nb_concurrents}")
+
     st.markdown("---")
 
     st.subheader("Affichage sur une carte")
