@@ -71,6 +71,7 @@ def show_kpi(prix, infos_stations, date_range):
                 prix_moyen_par_enseigne,
                 x="Date",
                 y=carburant,
+                markers=True,
                 color="Enseignes",
                 title=f"Prix moyen du {carburant} par enseigne",
                 labels={"Date": "Date", carburant: "Prix moyen (€)"},

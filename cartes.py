@@ -177,6 +177,7 @@ def show_cartes(prix, infos_stations, date_range):
             filtered_prix,
             x="Date",
             y=carburant,
+            markers=True,
             color="Enseignes",
             title=f"Prix du {carburant} pour la station Carrefour et ses concurrents",
             labels={"Date": "Date", carburant: "Prix (€)"},
