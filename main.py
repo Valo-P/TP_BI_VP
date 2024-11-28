@@ -2,12 +2,17 @@ import streamlit as st
 import pandas as pd
 from kpi import show_kpi
 from cartes import show_cartes
+from histo import show_histo
 import tqdm
 from tqdm import tqdm
 import json
 from geopy.distance import geodesic
 import unidecode
 import os
+
+st.sidebar.title("Valentin Poigt")
+st.sidebar.subheader("M2IA - 5IABI - TP Streamlit")
+st.sidebar.markdown("---")
 
 brand_mapping = {
     "CARREFOUR": "CARREFOUR",
