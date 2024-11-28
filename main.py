@@ -169,4 +169,4 @@ if page == "Étape A : KPI":
         show_kpi(prix, infos_stations, date_range)
 elif page == "Étape B : Cartes":
     if date_range:
-        show_cartes(prix, infos_stations)
+        show_cartes(prix, infos_stations, date_range)

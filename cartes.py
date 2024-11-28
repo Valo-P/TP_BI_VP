@@ -7,7 +7,7 @@ import json
 import plotly.express as px
 
 
-def show_cartes(prix, infos_stations):
+def show_cartes(prix, infos_stations, date_range):
     st.title("Page Cartes")
 
     # Charger les données des stations Carrefour et des concurrents
@@ -61,6 +61,14 @@ def show_cartes(prix, infos_stations):
     st.markdown("---")
 
     st.subheader("Tableau de comparaison des prix")
+
+    # Filtrer les données de prix par la plage de dates sélectionnée
+    if date_range:
+        start_date, end_date = date_range
+        prix = prix[
+            (prix["Date"] >= pd.to_datetime(start_date))
+            & (prix["Date"] <= pd.to_datetime(end_date))
+        ]
 
     # Afficher les prix des carburants dans un tableau
     carburants = ["SP95", "SP98", "Gazole", "E85", "GPLc"]
