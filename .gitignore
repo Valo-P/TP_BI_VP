@@ -1,4 +1,7 @@
 *.json
 *.csv
 
+!Infos_Stations.csv
+!Prix_2024.csv
+
 __pycache__/
