@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from kpi import show_kpi
 from cartes import show_cartes
-from histo import show_histo
 import tqdm
 from tqdm import tqdm
 import json
