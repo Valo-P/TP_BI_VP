@@ -1,5 +1,6 @@
 *.json
 *.csv
+*.ipynb
 
 !Infos_Stations.csv
 !Prix_2024.csv

@@ -131,16 +131,21 @@ def load_data():
 
     carrefour_concurrents = {}
 
-    for carrefour in tqdm(carrefour_stations, desc="Processing Carrefour stations"):
+    def find_concurrents(carrefour):
         carrefour_location = (carrefour["Latitude"], carrefour["Longitude"])
-        carrefour_concurrents[carrefour["id"]] = []
+        carrefour_id = carrefour["id"]
+        carrefour_concurrents[carrefour_id] = []
 
-        for concurrent in concurrents_stations:
+        def check_distance(concurrent):
             concurrent_location = (concurrent["Latitude"], concurrent["Longitude"])
             distance = geodesic(carrefour_location, concurrent_location).km
-
             if distance <= 10:
-                carrefour_concurrents[carrefour["id"]].append(concurrent["id"])
+                carrefour_concurrents[carrefour_id].append(concurrent["id"])
+
+        concurrents_stations.apply(check_distance, axis=1)
+
+    carrefour_stations_df = pd.DataFrame(carrefour_stations)
+    carrefour_stations_df.apply(find_concurrents, axis=1)
 
     with open("carrefour_concurrents.json", "w") as f:
         json.dump(carrefour_concurrents, f)
