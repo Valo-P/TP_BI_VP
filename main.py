@@ -7,6 +7,7 @@ from tqdm import tqdm
 import json
 from geopy.distance import geodesic
 import unidecode
+import os
 
 brand_mapping = {
     "CARREFOUR": "CARREFOUR",
@@ -129,21 +130,22 @@ def load_data():
     carrefour_stations = carrefour_stations.to_dict("records")
     concurrents_stations = concurrents_stations.to_dict("records")
 
-    carrefour_concurrents = {}
+    if not os.path.exists("carrefour_concurrents.json"):
+        carrefour_concurrents = {}
 
-    for carrefour in tqdm(carrefour_stations, desc="Processing Carrefour stations"):
-        carrefour_location = (carrefour["Latitude"], carrefour["Longitude"])
-        carrefour_concurrents[carrefour["id"]] = []
+        for carrefour in tqdm(carrefour_stations, desc="Processing Carrefour stations"):
+            carrefour_location = (carrefour["Latitude"], carrefour["Longitude"])
+            carrefour_concurrents[carrefour["id"]] = []
 
-        for concurrent in concurrents_stations:
-            concurrent_location = (concurrent["Latitude"], concurrent["Longitude"])
-            distance = geodesic(carrefour_location, concurrent_location).km
+            for concurrent in concurrents_stations:
+                concurrent_location = (concurrent["Latitude"], concurrent["Longitude"])
+                distance = geodesic(carrefour_location, concurrent_location).km
 
-            if distance <= 10:
-                carrefour_concurrents[carrefour["id"]].append(concurrent["id"])
+                if distance <= 10:
+                    carrefour_concurrents[carrefour["id"]].append(concurrent["id"])
 
-    with open("carrefour_concurrents.json", "w") as f:
-        json.dump(carrefour_concurrents, f)
+        with open("carrefour_concurrents.json", "w") as f:
+            json.dump(carrefour_concurrents, f)
 
     return prix, infos_stations
 
@@ -161,7 +163,14 @@ page = st.sidebar.radio(
 )
 
 # Sélection de la plage de dates
-date_range = st.sidebar.date_input("Sélectionnez une plage de dates", [])
+min_date = prix["Date"].min().date()
+max_date = prix["Date"].max().date()
+date_range = st.sidebar.date_input(
+    "Sélectionnez une plage de dates",
+    [min_date, max_date],
+    min_value=min_date,
+    max_value=max_date,
+)
 
 # Affiche le contenu de la page sélectionnée
 if page == "Étape A : KPI":
