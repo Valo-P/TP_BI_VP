@@ -4,8 +4,21 @@ import numpy as np
 import plotly.express as px
 
 
-def show_kpi(prix, infos_stations, date_range):
+def set_sidebar(min_date, max_date):
+    # Sidebar - Paramètres de la date - Multi-Select de Jours
+    date = st.sidebar.selectbox(
+        "Sélectionnez une date",
+        options=pd.date_range(min_date, max_date).strftime("%Y-%m-%d"),
+    )
+
+    return date
+
+
+def show_kpi(prix, infos_stations, min_date, max_date):
     st.title("Page KPI")
+
+    # Sidebar
+    date = set_sidebar(min_date, max_date)
 
     # Filtrer les enseignes d'intérêt
     enseignes_interet = [
@@ -22,12 +35,8 @@ def show_kpi(prix, infos_stations, date_range):
     ]
 
     # Filtrer les données de prix par la plage de dates sélectionnée
-    if date_range:
-        start_date, end_date = date_range
-        prix = prix[
-            (prix["Date"] >= pd.to_datetime(start_date))
-            & (prix["Date"] <= pd.to_datetime(end_date))
-        ]
+    if date:
+        prix = prix[prix["Date"] == date]
 
     # Fusionner les données de prix et d'infos stations
     merged_data = pd.merge(prix, infos_stations_filtered, left_on="id", right_on="id")
@@ -63,17 +72,3 @@ def show_kpi(prix, infos_stations, date_range):
                 if carburant in enseigne_data.columns:
                     mean_value = enseigne_data[carburant].mean()
                     st.metric(label=carburant, value=f"{mean_value:.3f}")
-
-    # Afficher les KPI sous forme de graphiques
-    for carburant in ["Gazole", "SP95", "E10", "SP98", "GPLc"]:
-        if carburant in prix.columns:
-            fig = px.line(
-                prix_moyen_par_enseigne,
-                x="Date",
-                y=carburant,
-                markers=True,
-                color="Enseignes",
-                title=f"Prix moyen du {carburant} par enseigne",
-                labels={"Date": "Date", carburant: "Prix moyen (€)"},
-            )
-            st.plotly_chart(fig, use_container_width=True)

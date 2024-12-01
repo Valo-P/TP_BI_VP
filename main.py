@@ -8,10 +8,41 @@ import json
 from geopy.distance import geodesic
 import unidecode
 import os
+from distance_with_dict import list_concurrents
 
-st.sidebar.title("Valentin Poigt")
-st.sidebar.subheader("M2IA - 5IABI - TP Streamlit")
-st.sidebar.markdown("---")
+
+# Définit la configuration de la page
+def set_page_config():
+    st.set_page_config(
+        page_title="Dashboard BI",
+        page_icon=":bar_chart:",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    st.markdown("<style> footer {visibility: hidden;} </style>", unsafe_allow_html=True)
+
+
+def set_sidebar():
+    st.sidebar.markdown(
+        """
+        <div class="logo" style="text-align: center;">
+            <img src="https://my.ecole-hexagone.com/logo-small.svg" width="100">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.sidebar.title("Valentin Poigt")
+    st.sidebar.subheader("M2IA - 5IABI - TP Streamlit")
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Navigation")
+    page = st.sidebar.radio(
+        "Choisissez une page",
+        ["Étape A : KPI", "Étape B : Cartes"],
+    )
+    st.sidebar.markdown("---")
+
+    return page
+
 
 brand_mapping = {
     "CARREFOUR": "CARREFOUR",
@@ -93,23 +124,18 @@ def load_data():
     prix = pd.read_csv("Prix_2024.csv")
     infos_stations = pd.read_csv("Infos_Stations.csv")
 
+    # ID
+    prix["id"] = prix["id"].apply(str)
+    infos_stations["id"] = infos_stations["id"].apply(str)
+
     # Date
     prix["Date"] = pd.to_datetime(prix["Date"], format="%Y-%m-%d")
 
     # Apply the function to each station
     prix = prix.apply(replace_outliers).reset_index(drop=True)
 
-    # Convertir latitude et longitude
-    infos_stations["Latitude"] = pd.to_numeric(
-        infos_stations["Latitude"], errors="coerce"
-    )
-    infos_stations["Longitude"] = pd.to_numeric(
-        infos_stations["Longitude"], errors="coerce"
-    )
-
-    # Diviser les coordonnées en degrés (/100000)
-    infos_stations["Latitude"] = infos_stations["Latitude"] / 100000
-    infos_stations["Longitude"] = infos_stations["Longitude"] / 100000
+    infos_stations["Latitude"] = infos_stations["Latitude"].apply(float) / 100000
+    infos_stations["Longitude"] = infos_stations["Longitude"].apply(float) / 100000
 
     # Transformation des Enseignes
     infos_stations["Enseignes"] = infos_stations["Enseignes"].str.upper()
@@ -131,22 +157,28 @@ def load_data():
     concurrents_stations.to_csv("Concurrents.csv", index=False)
 
     # Identifiez les concurrents dans un rayon de 10 km pour chaque station Carrefour
-    carrefour_stations = carrefour_stations.to_dict("records")
-    concurrents_stations = concurrents_stations.to_dict("records")
+    carrefour_stations_dict = {
+        carrefour_stations.loc[id, "id"]: (
+            carrefour_stations.loc[id, "Latitude"],
+            carrefour_stations.loc[id, "Longitude"],
+        )
+        for id in carrefour_stations.index
+    }
+    concurrents_stations_dict = {
+        concurrents_stations.loc[id, "id"]: (
+            concurrents_stations.loc[id, "Latitude"],
+            concurrents_stations.loc[id, "Longitude"],
+        )
+        for id in concurrents_stations.index
+    }
 
     if not os.path.exists("carrefour_concurrents.json"):
-        carrefour_concurrents = {}
+        carrefour_concurrents = dict()
 
-        for carrefour in tqdm(carrefour_stations, desc="Processing Carrefour stations"):
-            carrefour_location = (carrefour["Latitude"], carrefour["Longitude"])
-            carrefour_concurrents[carrefour["id"]] = []
-
-            for concurrent in concurrents_stations:
-                concurrent_location = (concurrent["Latitude"], concurrent["Longitude"])
-                distance = geodesic(carrefour_location, concurrent_location).km
-
-                if distance <= 10:
-                    carrefour_concurrents[carrefour["id"]].append(concurrent["id"])
+        carrefour_concurrents = {
+            id: list_concurrents(id, concurrents_stations_dict, carrefour_stations_dict)
+            for id in tqdm(carrefour_stations_dict)
+        }
 
         with open("carrefour_concurrents.json", "w") as f:
             json.dump(carrefour_concurrents, f)
@@ -154,36 +186,24 @@ def load_data():
     return prix, infos_stations
 
 
+###############################################################
+# MAIN
+###############################################################
+
+# Configure la page
+set_page_config()
+page = set_sidebar()
+
 # Charge les données
 prix, infos_stations = load_data()
 
-# Crée un menu de navigation et paramètres
-st.sidebar.title("Navigation")
-
-# Ajoute les pages
-page = st.sidebar.radio(
-    "Choisissez une page",
-    ["Étape A : KPI", "Étape B : Cartes"],
-)
-
-# Sélection de la plage de dates
+# Dates
 min_date = prix["Date"].min().date()
 max_date = prix["Date"].max().date()
-date_range = st.sidebar.date_input(
-    "Sélectionnez une plage de dates",
-    [min_date, max_date],
-    min_value=min_date,
-    max_value=max_date,
-)
 
-# Affiche le contenu de la page sélectionnée
-if len(date_range) == 2:
-    if date_range[0] and date_range[1] and date_range[0] < date_range[1]:
-        if page == "Étape A : KPI":
-            show_kpi(prix, infos_stations, date_range)
-        elif page == "Étape B : Cartes":
-            show_cartes(prix, infos_stations, date_range)
-    else:
-        st.warning("Veuillez sélectionner une plage de dates valide.")
+if page == "Étape A : KPI":
+    show_kpi(prix, infos_stations, min_date, max_date)
+elif page == "Étape B : Cartes":
+    show_cartes(prix, infos_stations, min_date, max_date)
 else:
-    st.warning("Veuillez sélectionner une plage de dates valide.")
+    st.warning("Veuillez sélectionner une page.")
